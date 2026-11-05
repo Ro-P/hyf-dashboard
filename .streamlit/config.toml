@@ -1,0 +1,22 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = false
+
+# HackYourFuture brand colours (see brand.py)
+[theme]
+base = "light"
+primaryColor = "#B12900"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FAF5D9"
+textColor = "#2B1A12"
+linkColor = "#B12900"
+borderColor = "#E8DFC4"
+headingFontWeights = [800, 700, 700, 600, 600, 600]
+baseRadius = "10px"
+chartCategoricalColors = ["#B12900", "#B07D00", "#5E1600", "#7A6A5C", "#D9653F", "#2F2A26", "#A08A6E"]
+
+[theme.sidebar]
+backgroundColor = "#FAF5D9"
+secondaryBackgroundColor = "#FFFFFF"
