@@ -1,4 +1,6 @@
-# HYF Impact Dashboard
+# HYF Impact Dashboard (tabs version)
+
+Same dashboard as `hyf-dashboard-app`, with the code split into one file per tab. It looks and works exactly the same.
 
 One codebase, two environments:
 
@@ -12,7 +14,18 @@ The variable **`APP_ENV`** (`dev` or `prod`) tells the app which environment it 
 ## Folder layout
 
 ```
-app.py, impact.py         the app
+app.py                    the app: login, sidebar and the main tabs
+impact.py                 the Impact dashboard: loads the data, draws the filters, opens the tabs A–I
+dashboard/common.py       shared parts: settings, definitions, the filters (Sel), cards, chart style, privacy rules
+dashboard/tab_a_overview.py    A · Impact overview
+dashboard/tab_b_programme.py   B · Programme & inclusion
+dashboard/tab_c_employment.py  C · Employment
+dashboard/tab_d_historic.py    D · Historic programme
+dashboard/tab_e_org.py         E · Organisation & community
+dashboard/tab_f_finance.py     F · Finance
+dashboard/tab_g_partners.py    G · Partners
+dashboard/tab_h_volunteers.py  H · Volunteers
+dashboard/tab_i_visibility.py  I · Visibility
 requirements.txt          Python packages
 Dockerfile                how Railway builds the app
 railway-start.sh          how Railway starts the app
@@ -23,6 +36,16 @@ tools/make_cloud_data.py  turns a Dojo export into counts-only files
 data/mock/                fictional data (dev)
 data/real/                real counts-only data (prod)
 ```
+
+## How the filters reach every tab
+
+1. `render()` in `impact.py` draws the filters (years, months, cohorts, audience).
+2. Your choices become one object, `sel`.
+3. Every tab is called with the same data `d` and the same `sel`, for example `page_employment(d, sel, …)`.
+4. Inside a tab, each chart keeps only the matching rows: `sel.ymask(...)` for years, `sel.cmask(...)` for cohorts.
+
+Streamlit runs the script again from the top after every filter change, so every tab is redrawn with the new `sel`.
+To change one tab, edit only its `dashboard/tab_….py` file.
 
 ## Set up GitHub (once)
 
@@ -58,13 +81,31 @@ Never upload straight to `main`. Everything goes through dev first.
 
 On your own laptop, never in the cloud:
 
-```bash
-python tools/make_cloud_data.py "path/to/dojo.trainees.xlsx"
-```
+1. Open the HYF Google Sheet and choose **File → Download → Microsoft Excel (.xlsx)**. The file keeps the tabs `trainees.csv`, `employement`, `Volunteers` and `Organisations`.
+2. Run:
 
-This writes counts-only files into `data/real/`. Upload `data/real/HYF_indicators.xlsx` and `data/real/HYF_counts.xlsx` to the **dev** branch, check dev still works, then merge to main as above.
+   ```bash
+   python tools/update_from_sheet.py "path/to/HYF data.xlsx"
+   ```
 
-Never upload the Dojo export or any file with one row per person.
+   | Tab | Becomes (counts only) |
+   |---|---|
+   | Trainee_details | `impact_summary`, `impact_countries`: the Impact overview (graduates, jobs, countries, gender). Only the columns id, gender, country_of_origin, learning_status, type and company_name are read |
+   | trainees.csv | `historic`, `historic_gender`, `origin` (historic up to 2025) + Build-tab tables |
+   | employement | `employers`: hires per company. The company comes from `companyName`; when that is empty, it is read from the sentence in `employmentInfo.comments` |
+   | Volunteers | `volunteers` (active, by main volunteer type) and `team.active_volunteers`, for the current half-year |
+   | Organisations | `partners`: active partners this year, and hiring partners / graduates hired per year (hires at active partner organisations) |
+
+3. Read what the script prints (status values, how many companies were found). Open the `…_employers_review.csv` file it saves next to your download, check the companies, and add spelling variants to `ALIASES` in `tools/extract_employers.py` if needed.
+4. Upload `data/real/HYF_indicators.xlsx` and `data/real/HYF_counts.xlsx` to the **dev** branch, check dev, then merge to main.
+
+Finance, targets, community, visibility, inclusion and outcomes are still filled in by hand in `HYF_indicators.xlsx`.
+
+**Only real data is shown in prod.** Rows marked `is_sample = TRUE` are placeholders: the dev app shows them (demo), the prod app leaves them out, and a page or section with no real data is hidden. Fill in real rows (with `is_sample = FALSE`) and the page appears. To force a setting, set the variable `SHOW_SAMPLE_DATA` to `true` or `false`. Exception: the tabs listed in `SAMPLE_TABS` (default `community,finance,visibility`) keep their placeholder rows in prod, with a yellow "sample data" warning, until real figures are filled in. Remove a tab from `SAMPLE_TABS` (Railway/Streamlit variable) once it has real data, or set it to an empty value to hide all placeholders.
+
+Never upload the Google Sheet download, a Dojo export, the review file or any other file with one row per person.
+
+You can also run the parts separately: `tools/make_cloud_data.py` (trainees only) and `tools/extract_employers.py` (employment only).
 
 ## Google login instead of a password (optional)
 
