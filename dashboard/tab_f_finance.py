@@ -48,14 +48,14 @@ def page_finance(d, sel, internal, ex):
         tgt = None if t.empty else (int(t["year"].iloc[0]), float(t["target"].iloc[0]))
     kpi(c[1], ex, "op_income", pct(op, tot), fmt_pct,
         (f"{euro(op)} from operations" if op else "Not reported yet") + (f" · target {tgt[0]}: {tgt[1]:g}%" if tgt else ""))
-    kpi(c[2], ex, "grants", gr, euro, span or "", label="Grants")
+    kpi(c[2], ex, "grants", gr, euro, span or "", label="Placement fees")
     if not f.empty:
         fl = f.copy()
         fl["label"] = [f"{int(y)}" + ("" if s == "actual" else f" ({s})") for y, s in zip(fl["year"], fl["status"])]
         fl["other_eur"] = (fl["total_income_eur"] - fl["operational_income_eur"] - fl["grants_eur"].fillna(0)).clip(lower=0)
         fl["operational_pct"] = [pct(a, b) for a, b in zip(fl["operational_income_eur"], fl["total_income_eur"])]
         a, b = st.columns(2)
-        parts = [("operational_income_eur", "Operational income", "#B12900"), ("grants_eur", "Grants", "#5E1600"), ("other_eur", "Other income", "#FFD43B")]
+        parts = [("operational_income_eur", "Operational income", "#B12900"), ("grants_eur", "Placement fees", "#5E1600"), ("other_eur", "Other income", "#FFD43B")]
         fig = go.Figure()
         for colname, name, colr in parts:
             if fl[colname].fillna(0).sum() > 0:

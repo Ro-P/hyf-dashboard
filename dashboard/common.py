@@ -71,7 +71,7 @@ DEFS = {
     "staff": ("Fixed Staff", "Individuals employed by HYF under an employment contract on the reporting date.", "Active employee headcount; excludes ZZP experts and interns.", "Half-yearly snapshot", "HR records"),
     "zzp": ("External Experts (ZZP)", "Self-employed experts with active HYF contracts on the reporting date.", "Count of active contracted individuals.", "Half-yearly snapshot", "Contract administration"),
     "interns": ("Interns", "Individuals actively interning at HYF on the reporting date.", "Count of people on active internship agreements.", "Half-yearly snapshot", "HR / internship records"),
-    "grants": ("Grants", "Income from grants (funds and foundations) in the financial year.", "Sum of grant income in closed financial years.", "Annual", "Finances tab"),
+    "grants": ("Placement fees", "Income from placement fees in the financial year (the Grants column of the Finances tab).", "Sum of the Grants column in closed financial years.", "Annual", "Finances tab"),
     "partner_type": ("Partners by type", "Active partner organisations per type of partnership: employment, funding, volunteers, events.", "Count of active organisations with that partnership type. One organisation can have several types.", "Annual", "Organisations tab"),
     "volunteer_expertise": ("Volunteers by expertise", "Active volunteers per area of expertise (Data, HR mentor, English mentor…).", "Count of active volunteers who listed that expertise. One volunteer can list several.", "Half-yearly", "Volunteers tab"),
     "volunteers_total": ("Total volunteers", "All volunteers in the Volunteers tab, active and paused.", "Count of volunteers per status, added up.", "Half-yearly", "Volunteers tab"),
