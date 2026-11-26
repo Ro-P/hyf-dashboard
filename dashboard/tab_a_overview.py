@@ -185,16 +185,12 @@ def overview_all(d, sel, ex):
     # working in or outside IT, from the job paths per graduation year (no cohort split in that table)
     jp = d.get("job_paths", pd.DataFrame())
     working, outside, jp_note = None, None, ""
-    jpc = d.get("job_paths_by_cohort", pd.DataFrame())
-    if sel.cohorts and not jpc.empty:                 # graduates of the selected cohorts
-        r = jpc[sel.cmask(jpc["cohort"])]
-        if not r.empty and r[["tech_job", "internship"]].notna().any().any():
-            outside = nz(r.get("non_tech_job")) or 0
-            working = (nz(r.get("tech_job")) or 0) + (nz(r.get("internship")) or 0) + outside
-            if r[["tech_job", "internship", "non_tech_job"]].isna().any().any():
-                jp_note = " · groups under 5 per cohort hidden"
-        elif not r.empty:
-            jp_note = "hidden"
+    if sel.cohorts:                                   # graduates of the selected cohorts, from the per-class counts
+        if "working" in cl and cl["working"].notna().any():
+            working = nz(cl["working"]) or 0
+            outside = working - (in_it or 0)
+        else:                                         # older data file without the "working" column: in IT only
+            working, outside, jp_note = in_it, None, "it_only"
     elif not jp.empty and not sel.cohorts:
         yrs = jp[jp["graduation_year"].astype(str) != "All"]
         gy = pd.to_numeric(yrs["graduation_year"], errors="coerce").dropna()
@@ -214,8 +210,8 @@ def overview_all(d, sel, ex):
     known = names[~names.str.lower().str.startswith(("other", "not recorded", "nan"))]
     c = st.columns(3)
     kpi(c[0], ex, "all_grads", grads, fmt_int, gctx, label="Graduates")
-    if jp_note == "hidden":
-        kpi(c[1], ex, "all_working", None, fmt_int, f"Fewer than {SUPPRESS_BELOW} per group in these cohorts, so not shown", label="Employment")
+    if jp_note == "it_only":
+        kpi(c[1], ex, "all_working", working, fmt_int, "In IT only: run update_from_sheet.py again to add jobs outside IT", label="Employment")
     elif working is not None:
         kpi(c[1], ex, "all_working", working, fmt_int,
             (f"{fmt_int(working - outside)} in IT · {fmt_int(outside)} outside IT (current status)" if not jp_note or outside
