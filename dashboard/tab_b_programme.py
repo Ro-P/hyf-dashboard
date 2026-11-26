@@ -59,7 +59,42 @@ def page_programme(d, sel, internal, today, ex):
     shown = False
     sample_flag(any(bool(d.get(t, pd.DataFrame()).get("is_sample", pd.Series(dtype=str)).astype(str).str.upper().isin(["TRUE", "1"]).any())
                     for t in ("students_supported", "students_by_cohort", "origin_range", "education")))
-    # ---- 1. students supported: distinct students per year, split by cohort
+    # ---- 1. country of origin: every country, with the number of trainees
+    r, scope = _pick(d, sel, "origin_range", "origin_by_cohort", "country", "trainees", "class started")
+    if r is not None:
+        shown = True
+        st.markdown("##### Country of origin")
+        if r.empty:
+            st.info("No country data for this selection.")
+        else:
+            st.markdown(f"**{len(r)} {'country' if len(r) == 1 else 'countries'}** · {scope}")
+            _hbar(r, "country", "pr-country", "Trainees per country of origin", ex)
+            n = (f"Number of trainees per country of origin, by the year their class started (or by cohort when cohorts are picked). "
+                 f"“<{SUPPRESS_BELOW}” means fewer than {SUPPRESS_BELOW} trainees, not shown exactly to protect their privacy"
+                 + (f"; per cohort, countries with fewer than {SUPPRESS_BELOW} trainees are grouped as “Other”." if sel.cohorts else "."))
+            st.caption(n)
+            ex.note(n)
+    elif not d.get("origin", pd.DataFrame()).empty:
+        shown = True
+        country_section(d, sel, ex)
+    # ---- 2. education level of trainees who answered
+    r, scope = _pick(d, sel, "education", "education_by_cohort", "education", "trainees", "class started")
+    if r is not None:
+        shown = True
+        st.markdown("##### Education level")
+        answered = r.loc[r["education"] == "_answered", "trainees"] if not r.empty else pd.Series(dtype=float)
+        total = r.loc[r["education"] == "_trainees", "trainees"] if not r.empty else pd.Series(dtype=float)
+        body = r[~r["education"].astype(str).str.startswith("_")] if not r.empty else r
+        if answered.empty or not nz(answered):
+            st.info("Nobody answered the education question in this selection.")
+        else:
+            st.markdown(f"**{fmt_int(nz(answered))} of {fmt_int(nz(total))} trainees answered** · {scope}")
+            _hbar(body, "education", "pr-education", "Education level (trainees who answered)", ex, color="#5E1600")
+            n = (f"Number of trainees per education level, among trainees who answered, by the year their class started (or by cohort when cohorts are picked). "
+                 f"Answers given by fewer than {SUPPRESS_BELOW} trainees in total are grouped as “Other”; “<{SUPPRESS_BELOW}” means fewer than {SUPPRESS_BELOW}.")
+            st.caption(n)
+            ex.note(n)
+    # ---- 3. students supported (at the end of the page): distinct students per year, split by cohort
     ss, sc = d.get("students_supported", pd.DataFrame()), d.get("students_by_cohort", pd.DataFrame())
     if not ss.empty or not sc.empty:
         shown = True
@@ -103,40 +138,5 @@ def page_programme(d, sel, internal, today, ex):
              f"(cohorts with fewer than {SUPPRESS_BELOW} students in a year are added together as “small groups”). Hover over a block to see its cohort.")
         st.caption(n)
         ex.note(n)
-    # ---- 2. country of origin: every country, with the number of trainees
-    r, scope = _pick(d, sel, "origin_range", "origin_by_cohort", "country", "trainees", "class started")
-    if r is not None:
-        shown = True
-        st.markdown("##### Country of origin")
-        if r.empty:
-            st.info("No country data for this selection.")
-        else:
-            st.markdown(f"**{len(r)} {'country' if len(r) == 1 else 'countries'}** · {scope}")
-            _hbar(r, "country", "pr-country", "Trainees per country of origin", ex)
-            n = (f"Number of trainees per country of origin, by the year their class started (or by cohort when cohorts are picked). "
-                 f"“<{SUPPRESS_BELOW}” means fewer than {SUPPRESS_BELOW} trainees, not shown exactly to protect their privacy"
-                 + (f"; per cohort, countries with fewer than {SUPPRESS_BELOW} trainees are grouped as “Other”." if sel.cohorts else "."))
-            st.caption(n)
-            ex.note(n)
-    elif not d.get("origin", pd.DataFrame()).empty:
-        shown = True
-        country_section(d, sel, ex)
-    # ---- 3. education level of trainees who answered
-    r, scope = _pick(d, sel, "education", "education_by_cohort", "education", "trainees", "class started")
-    if r is not None:
-        shown = True
-        st.markdown("##### Education level")
-        answered = r.loc[r["education"] == "_answered", "trainees"] if not r.empty else pd.Series(dtype=float)
-        total = r.loc[r["education"] == "_trainees", "trainees"] if not r.empty else pd.Series(dtype=float)
-        body = r[~r["education"].astype(str).str.startswith("_")] if not r.empty else r
-        if answered.empty or not nz(answered):
-            st.info("Nobody answered the education question in this selection.")
-        else:
-            st.markdown(f"**{fmt_int(nz(answered))} of {fmt_int(nz(total))} trainees answered** · {scope}")
-            _hbar(body, "education", "pr-education", "Education level (trainees who answered)", ex, color="#5E1600")
-            n = (f"Number of trainees per education level, among trainees who answered, by the year their class started (or by cohort when cohorts are picked). "
-                 f"Answers given by fewer than {SUPPRESS_BELOW} trainees in total are grouped as “Other”; “<{SUPPRESS_BELOW}” means fewer than {SUPPRESS_BELOW}.")
-            st.caption(n)
-            ex.note(n)
     if not shown:
         st.info("No programme data yet. Run tools/update_from_sheet.py.")
